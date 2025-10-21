@@ -21,16 +21,6 @@ const TicTacToe = () => {
   const [score, setScore] = useState({ player: 0, computer: 0, ties: 0 });
   const [gameOver, setGameOver] = useState(false);
 
-  // Initialize with player's first move (top left)
-  useEffect(() => {
-    const newBoard = [...board];
-    newBoard[0] = "X";
-    setBoard(newBoard);
-    setIsPlayerTurn(false);
-    
-    // Computer makes its move after player's first move
-    setTimeout(() => makeComputerMove(newBoard), 500);
-  }, []);
 
   const checkWinner = (currentBoard: Board): { winner: GameResult; line: number[] } => {
     for (const combination of WINNING_COMBINATIONS) {
@@ -151,15 +141,11 @@ const TicTacToe = () => {
   };
 
   const resetGame = () => {
-    const newBoard = Array(9).fill(null);
-    newBoard[0] = "X";
-    setBoard(newBoard);
-    setIsPlayerTurn(false);
+    setBoard(Array(9).fill(null));
+    setIsPlayerTurn(true);
     setWinner(null);
     setWinningLine([]);
     setGameOver(false);
-    
-    setTimeout(() => makeComputerMove(newBoard), 500);
   };
 
   return (
