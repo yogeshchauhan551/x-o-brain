@@ -7,6 +7,10 @@ All colors MUST be HSL.
 */
 
 @layer base {
+  * {
+    font-family: 'Poppins', 'Quicksand', system-ui, -apple-system, sans-serif;
+  }
+
   :root {
     --background: 240 30% 6%;
     --foreground: 0 0% 98%;
@@ -77,6 +81,24 @@ All colors MUST be HSL.
     100% {
       transform: scale(1);
       opacity: 1;
+    }
+  }
+  
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+  
+  @keyframes shimmer {
+    0% {
+      background-position: -1000px 0;
+    }
+    100% {
+      background-position: 1000px 0;
     }
   }
   
