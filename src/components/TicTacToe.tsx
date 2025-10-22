@@ -16,6 +16,7 @@ type Player = "X" | "O" | null;
 type GameResult = "X" | "O" | "tie" | null;
 type Board = Player[];
 type Difficulty = "easy" | "medium" | "hard";
+type GameMode = "ai" | "friend";
 
 const WINNING_COMBINATIONS = [
   [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
@@ -28,10 +29,19 @@ const TicTacToe = () => {
   const [isPlayerTurn, setIsPlayerTurn] = useState(true);
   const [winner, setWinner] = useState<GameResult>(null);
   const [winningLine, setWinningLine] = useState<number[]>([]);
-  const [score, setScore] = useState(() => {
-    const saved = localStorage.getItem("tic-tac-toe-score");
+  const [gameMode, setGameMode] = useState<GameMode>("ai");
+  const [currentPlayer, setCurrentPlayer] = useState<"X" | "O">("X");
+  
+  const [scoreAI, setScoreAI] = useState(() => {
+    const saved = localStorage.getItem("tic-tac-toe-score-ai");
     return saved ? JSON.parse(saved) : { player: 0, computer: 0, ties: 0 };
   });
+  
+  const [scoreFriend, setScoreFriend] = useState(() => {
+    const saved = localStorage.getItem("tic-tac-toe-score-friend");
+    return saved ? JSON.parse(saved) : { player1: 0, player2: 0, ties: 0 };
+  });
+  
   const [gameOver, setGameOver] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
   const [difficulty, setDifficulty] = useState<Difficulty>("hard");
@@ -39,23 +49,35 @@ const TicTacToe = () => {
   const [aiSymbol, setAiSymbol] = useState<"X" | "O">("O");
 
   useEffect(() => {
-    localStorage.setItem("tic-tac-toe-score", JSON.stringify(score));
-  }, [score]);
+    localStorage.setItem("tic-tac-toe-score-ai", JSON.stringify(scoreAI));
+  }, [scoreAI]);
 
   useEffect(() => {
-    // Random start: 50% chance AI goes first
-    const aiGoesFirst = Math.random() < 0.5;
-    if (aiGoesFirst) {
-      setPlayerSymbol("O");
-      setAiSymbol("X");
-      setIsPlayerTurn(false);
-      setTimeout(() => makeComputerMove(Array(9).fill(null), "X"), 500);
+    localStorage.setItem("tic-tac-toe-score-friend", JSON.stringify(scoreFriend));
+  }, [scoreFriend]);
+
+  useEffect(() => {
+    if (gameMode === "ai") {
+      // Random start: 50% chance AI goes first
+      const aiGoesFirst = Math.random() < 0.5;
+      if (aiGoesFirst) {
+        setPlayerSymbol("O");
+        setAiSymbol("X");
+        setIsPlayerTurn(false);
+        setCurrentPlayer("X");
+        setTimeout(() => makeComputerMove(Array(9).fill(null), "X"), 500);
+      } else {
+        setPlayerSymbol("X");
+        setAiSymbol("O");
+        setIsPlayerTurn(true);
+        setCurrentPlayer("X");
+      }
     } else {
-      setPlayerSymbol("X");
-      setAiSymbol("O");
+      // Friend mode: always start with X (Player 1)
+      setCurrentPlayer("X");
       setIsPlayerTurn(true);
     }
-  }, []);
+  }, [gameMode]);
 
   const checkWinner = (currentBoard: Board): { winner: GameResult; line: number[] } => {
     for (const combination of WINNING_COMBINATIONS) {
@@ -187,19 +209,37 @@ const TicTacToe = () => {
   };
 
   const handleCellClick = (index: number) => {
-    if (board[index] || !isPlayerTurn || gameOver || winner) return;
+    if (board[index] || gameOver || winner) return;
 
-    const newBoard = [...board];
-    newBoard[index] = playerSymbol;
-    setBoard(newBoard);
-    playMoveSound();
-    
-    const result = checkWinner(newBoard);
-    if (result.winner) {
-      handleGameEnd(result.winner, result.line);
+    if (gameMode === "ai") {
+      // AI mode logic
+      if (!isPlayerTurn) return;
+      
+      const newBoard = [...board];
+      newBoard[index] = playerSymbol;
+      setBoard(newBoard);
+      playMoveSound();
+      
+      const result = checkWinner(newBoard);
+      if (result.winner) {
+        handleGameEnd(result.winner, result.line);
+      } else {
+        setIsPlayerTurn(false);
+        setTimeout(() => makeComputerMove(newBoard, aiSymbol), 500);
+      }
     } else {
-      setIsPlayerTurn(false);
-      setTimeout(() => makeComputerMove(newBoard, aiSymbol), 500);
+      // Friend mode logic
+      const newBoard = [...board];
+      newBoard[index] = currentPlayer;
+      setBoard(newBoard);
+      playMoveSound();
+      
+      const result = checkWinner(newBoard);
+      if (result.winner) {
+        handleGameEnd(result.winner, result.line);
+      } else {
+        setCurrentPlayer(currentPlayer === "X" ? "O" : "X");
+      }
     }
   };
 
@@ -209,18 +249,35 @@ const TicTacToe = () => {
     setGameOver(true);
     setShowDialog(true);
     
-    if (gameWinner === playerSymbol) {
-      setScore(prev => ({ ...prev, player: prev.player + 1 }));
-      playWinSound();
-      toast.success("You won! 🎉");
-    } else if (gameWinner === aiSymbol) {
-      setScore(prev => ({ ...prev, computer: prev.computer + 1 }));
-      playWinSound();
-      toast.error("Computer wins!");
+    if (gameMode === "ai") {
+      if (gameWinner === playerSymbol) {
+        setScoreAI(prev => ({ ...prev, player: prev.player + 1 }));
+        playWinSound();
+        toast.success("You won! 🎉");
+      } else if (gameWinner === aiSymbol) {
+        setScoreAI(prev => ({ ...prev, computer: prev.computer + 1 }));
+        playWinSound();
+        toast.error("Computer wins!");
+      } else {
+        setScoreAI(prev => ({ ...prev, ties: prev.ties + 1 }));
+        playTieSound();
+        toast.info("It's a tie!");
+      }
     } else {
-      setScore(prev => ({ ...prev, ties: prev.ties + 1 }));
-      playTieSound();
-      toast.info("It's a tie!");
+      // Friend mode
+      if (gameWinner === "X") {
+        setScoreFriend(prev => ({ ...prev, player1: prev.player1 + 1 }));
+        playWinSound();
+        toast.success("Player 1 Wins 🎉");
+      } else if (gameWinner === "O") {
+        setScoreFriend(prev => ({ ...prev, player2: prev.player2 + 1 }));
+        playWinSound();
+        toast.success("Player 2 Wins 💜");
+      } else {
+        setScoreFriend(prev => ({ ...prev, ties: prev.ties + 1 }));
+        playTieSound();
+        toast.info("It's a tie! 🤝");
+      }
     }
   };
 
@@ -231,98 +288,220 @@ const TicTacToe = () => {
     setGameOver(false);
     setShowDialog(false);
 
-    // Random start again
-    const aiGoesFirst = Math.random() < 0.5;
-    if (aiGoesFirst) {
-      setPlayerSymbol("O");
-      setAiSymbol("X");
-      setIsPlayerTurn(false);
-      setTimeout(() => makeComputerMove(Array(9).fill(null), "X"), 500);
+    if (gameMode === "ai") {
+      // Random start again
+      const aiGoesFirst = Math.random() < 0.5;
+      if (aiGoesFirst) {
+        setPlayerSymbol("O");
+        setAiSymbol("X");
+        setIsPlayerTurn(false);
+        setCurrentPlayer("X");
+        setTimeout(() => makeComputerMove(Array(9).fill(null), "X"), 500);
+      } else {
+        setPlayerSymbol("X");
+        setAiSymbol("O");
+        setIsPlayerTurn(true);
+        setCurrentPlayer("X");
+      }
     } else {
-      setPlayerSymbol("X");
-      setAiSymbol("O");
+      // Friend mode: always start with X (Player 1)
+      setCurrentPlayer("X");
       setIsPlayerTurn(true);
     }
   };
 
   const resetScore = () => {
-    setScore({ player: 0, computer: 0, ties: 0 });
-    localStorage.setItem("tic-tac-toe-score", JSON.stringify({ player: 0, computer: 0, ties: 0 }));
+    if (gameMode === "ai") {
+      setScoreAI({ player: 0, computer: 0, ties: 0 });
+      localStorage.setItem("tic-tac-toe-score-ai", JSON.stringify({ player: 0, computer: 0, ties: 0 }));
+    } else {
+      setScoreFriend({ player1: 0, player2: 0, ties: 0 });
+      localStorage.setItem("tic-tac-toe-score-friend", JSON.stringify({ player1: 0, player2: 0, ties: 0 }));
+    }
     toast.success("Score reset!");
   };
 
+  const score = gameMode === "ai" ? scoreAI : scoreFriend;
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-[hsl(240,30%,8%)] to-[hsl(240,30%,6%)]">
+    <div className={`min-h-screen flex items-center justify-center p-4 transition-all duration-500 ${
+      gameMode === "friend" 
+        ? "bg-gradient-to-br from-[hsl(280,70%,92%)] via-[hsl(262,80%,90%)] to-[hsl(220,70%,92%)]"
+        : "bg-gradient-to-b from-[hsl(240,30%,8%)] to-[hsl(240,30%,6%)]"
+    }`}>
       <div className="w-full max-w-md space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-[hsl(262,83%,58%)] to-[hsl(280,90%,50%)] bg-clip-text text-transparent">
-            TicTacLegend
+          <h1 className={`text-4xl md:text-5xl font-bold bg-gradient-to-r bg-clip-text text-transparent ${
+            gameMode === "friend"
+              ? "from-[hsl(320,80%,60%)] via-[hsl(280,90%,65%)] to-[hsl(220,80%,65%)]"
+              : "from-[hsl(262,83%,58%)] to-[hsl(280,90%,50%)]"
+          }`}>
+            TicTacLegend {gameMode === "friend" && "💖"}
           </h1>
-          <p className="text-muted-foreground text-sm md:text-base">
+          <p className={`text-sm md:text-base ${gameMode === "friend" ? "text-[hsl(280,50%,40%)]" : "text-muted-foreground"}`}>
             {gameOver 
-              ? winner === "tie" ? "Game Over - Tie!" : `${winner === playerSymbol ? "You" : "AI"} Won!`
-              : isPlayerTurn ? `Your turn (${playerSymbol})` : "AI thinking..."}
+              ? winner === "tie" ? "Game Over - Tie! 🤝" : gameMode === "ai" 
+                ? `${winner === playerSymbol ? "You" : "AI"} Won!`
+                : `Player ${winner === "X" ? "1" : "2"} Won! ${winner === "X" ? "🎉" : "💜"}`
+              : gameMode === "ai"
+                ? isPlayerTurn ? `Your turn (${playerSymbol})` : "AI thinking..."
+                : `Player ${currentPlayer === "X" ? "1" : "2"}'s turn (${currentPlayer})`}
           </p>
         </div>
 
-        {/* Difficulty Selector */}
-        <Card className="p-4 bg-card border-border shadow-[0_10px_40px_hsl(240,30%,3%/0.5)]">
+        {/* Mode Selector */}
+        <Card className={`p-4 border shadow-lg ${
+          gameMode === "friend" 
+            ? "bg-white/80 border-[hsl(280,60%,80%)]"
+            : "bg-card border-border shadow-[0_10px_40px_hsl(240,30%,3%/0.5)]"
+        }`}>
           <div className="flex items-center justify-between gap-4">
-            <label className="text-sm font-medium">Difficulty:</label>
-            <Select value={difficulty} onValueChange={(v) => setDifficulty(v as Difficulty)}>
-              <SelectTrigger className="w-32">
+            <label className={`text-sm font-medium flex items-center gap-2 ${
+              gameMode === "friend" ? "text-[hsl(280,60%,40%)]" : ""
+            }`}>
+              Game Mode:
+            </label>
+            <Select value={gameMode} onValueChange={(v) => {
+              setGameMode(v as GameMode);
+              setBoard(Array(9).fill(null));
+              setWinner(null);
+              setWinningLine([]);
+              setGameOver(false);
+              setShowDialog(false);
+            }}>
+              <SelectTrigger className="w-40">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="easy">Easy</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="hard">Hard</SelectItem>
+                <SelectItem value="ai">🤖 Play vs AI</SelectItem>
+                <SelectItem value="friend">💝 Play vs Friend</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </Card>
 
+        {/* Difficulty Selector - Only for AI mode */}
+        {gameMode === "ai" && (
+          <Card className="p-4 bg-card border-border shadow-[0_10px_40px_hsl(240,30%,3%/0.5)]">
+            <div className="flex items-center justify-between gap-4">
+              <label className="text-sm font-medium">Difficulty:</label>
+              <Select value={difficulty} onValueChange={(v) => setDifficulty(v as Difficulty)}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="easy">Easy</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="hard">Hard</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </Card>
+        )}
+
         {/* Score Board */}
-        <Card className="p-6 bg-card border-border shadow-[0_10px_40px_hsl(240,30%,3%/0.5)]">
+        <Card className={`p-6 border shadow-lg ${
+          gameMode === "friend" 
+            ? "bg-white/80 border-[hsl(280,60%,80%)]"
+            : "bg-card border-border shadow-[0_10px_40px_hsl(240,30%,3%/0.5)]"
+        }`}>
           <div className="grid grid-cols-3 gap-4 text-center">
-            <div>
-              <div className="text-2xl md:text-3xl font-bold text-[hsl(14,100%,65%)]">{score.player}</div>
-              <div className="text-xs md:text-sm text-muted-foreground">You ({playerSymbol})</div>
-            </div>
-            <div>
-              <div className="text-2xl md:text-3xl font-bold text-muted-foreground">{score.ties}</div>
-              <div className="text-xs md:text-sm text-muted-foreground">Ties</div>
-            </div>
-            <div>
-              <div className="text-2xl md:text-3xl font-bold text-[hsl(189,95%,55%)]">{score.computer}</div>
-              <div className="text-xs md:text-sm text-muted-foreground">AI ({aiSymbol})</div>
-            </div>
+            {gameMode === "ai" ? (
+              <>
+                <div>
+                  <div className="text-2xl md:text-3xl font-bold text-[hsl(14,100%,65%)]">{scoreAI.player}</div>
+                  <div className="text-xs md:text-sm text-muted-foreground">
+                    You ({playerSymbol})
+                  </div>
+                </div>
+                <div>
+                  <div className="text-2xl md:text-3xl font-bold text-muted-foreground">
+                    {scoreAI.ties}
+                  </div>
+                  <div className="text-xs md:text-sm text-muted-foreground">
+                    Ties
+                  </div>
+                </div>
+                <div>
+                  <div className="text-2xl md:text-3xl font-bold text-[hsl(189,95%,55%)]">{scoreAI.computer}</div>
+                  <div className="text-xs md:text-sm text-muted-foreground">
+                    AI ({aiSymbol})
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div>
+                  <div className="text-2xl md:text-3xl font-bold text-[hsl(320,80%,60%)]">{scoreFriend.player1}</div>
+                  <div className="text-xs md:text-sm text-[hsl(280,50%,40%)]">Player 1 (X)</div>
+                </div>
+                <div>
+                  <div className="text-2xl md:text-3xl font-bold text-[hsl(280,60%,50%)]">{scoreFriend.ties}</div>
+                  <div className="text-xs md:text-sm text-[hsl(280,50%,40%)]">Ties 🤝</div>
+                </div>
+                <div>
+                  <div className="text-2xl md:text-3xl font-bold text-[hsl(220,80%,65%)]">{scoreFriend.player2}</div>
+                  <div className="text-xs md:text-sm text-[hsl(280,50%,40%)]">Player 2 (O)</div>
+                </div>
+              </>
+            )}
           </div>
           <Button
             onClick={resetScore}
             variant="outline"
-            className="w-full mt-4 text-xs md:text-sm"
+            className={`w-full mt-4 text-xs md:text-sm ${
+              gameMode === "friend" 
+                ? "border-[hsl(280,60%,70%)] text-[hsl(280,60%,40%)] hover:bg-[hsl(280,60%,95%)]"
+                : ""
+            }`}
           >
             Reset Score
           </Button>
         </Card>
 
         {/* Game Board */}
-        <Card className="p-4 md:p-6 bg-card border-border shadow-[0_10px_40px_hsl(240,30%,3%/0.5)]">
+        <Card className={`p-4 md:p-6 border shadow-lg ${
+          gameMode === "friend" 
+            ? "bg-white/80 border-[hsl(280,60%,80%)]"
+            : "bg-card border-border shadow-[0_10px_40px_hsl(240,30%,3%/0.5)]"
+        }`}>
           <div className="grid grid-cols-3 gap-2 md:gap-3">
             {board.map((cell, index) => (
               <button
                 key={index}
                 onClick={() => handleCellClick(index)}
-                disabled={!isPlayerTurn || gameOver || cell !== null}
+                disabled={gameOver || cell !== null || (gameMode === "ai" && !isPlayerTurn)}
                 className={`
                   aspect-square rounded-lg flex items-center justify-center text-4xl md:text-5xl font-bold
                   transition-all duration-300 ease-out
-                  ${cell === null ? 'bg-[hsl(240,20%,15%)] hover:bg-[hsl(240,20%,18%)]' : 'bg-[hsl(240,20%,15%)]'}
-                  ${cell === null && isPlayerTurn && !gameOver ? 'cursor-pointer hover:scale-105' : 'cursor-not-allowed'}
-                  ${winningLine.includes(index) ? 'winning-cell bg-[hsl(262,83%,58%)]' : ''}
-                  ${cell === playerSymbol ? 'text-[hsl(14,100%,65%)]' : cell === aiSymbol ? 'text-[hsl(189,95%,55%)]' : ''}
+                  ${gameMode === "friend" 
+                    ? cell === null 
+                      ? 'bg-gradient-to-br from-[hsl(280,70%,95%)] to-[hsl(260,70%,92%)] hover:from-[hsl(280,70%,90%)] hover:to-[hsl(260,70%,87%)] shadow-inner'
+                      : 'bg-gradient-to-br from-[hsl(280,70%,95%)] to-[hsl(260,70%,92%)]'
+                    : cell === null 
+                      ? 'bg-[hsl(240,20%,15%)] hover:bg-[hsl(240,20%,18%)]'
+                      : 'bg-[hsl(240,20%,15%)]'
+                  }
+                  ${cell === null && !gameOver ? 'cursor-pointer hover:scale-105' : 'cursor-not-allowed'}
+                  ${winningLine.includes(index) 
+                    ? gameMode === "friend"
+                      ? 'winning-cell bg-gradient-to-r from-[hsl(320,80%,70%)] to-[hsl(280,80%,70%)]'
+                      : 'winning-cell bg-[hsl(262,83%,58%)]'
+                    : ''
+                  }
+                  ${gameMode === "friend"
+                    ? cell === "X" 
+                      ? 'text-[hsl(320,80%,55%)]'
+                      : cell === "O"
+                        ? 'text-[hsl(220,80%,60%)]'
+                        : ''
+                    : cell === playerSymbol 
+                      ? 'text-[hsl(14,100%,65%)]'
+                      : cell === aiSymbol 
+                        ? 'text-[hsl(189,95%,55%)]'
+                        : ''
+                  }
                   disabled:opacity-50
                 `}
               >
@@ -339,15 +518,20 @@ const TicTacToe = () => {
         {/* New Game Button */}
         <Button
           onClick={resetGame}
-          className="w-full h-12 text-base md:text-lg font-semibold bg-gradient-to-r from-[hsl(262,83%,58%)] to-[hsl(280,90%,50%)] hover:opacity-90 transition-opacity shadow-[0_4px_14px_hsl(262,83%,58%/0.4)]"
+          className={`w-full h-12 text-base md:text-lg font-semibold transition-all ${
+            gameMode === "friend"
+              ? "bg-gradient-to-r from-[hsl(320,80%,60%)] via-[hsl(280,90%,65%)] to-[hsl(220,80%,65%)] hover:opacity-90 shadow-[0_4px_14px_hsl(280,80%,60%/0.4)]"
+              : "bg-gradient-to-r from-[hsl(262,83%,58%)] to-[hsl(280,90%,50%)] hover:opacity-90 shadow-[0_4px_14px_hsl(262,83%,58%/0.4)]"
+          }`}
         >
-          New Game
+          New Game {gameMode === "friend" && "🎮"}
         </Button>
       </div>
 
       <GameEndDialog
         open={showDialog}
         winner={winner}
+        gameMode={gameMode}
         onPlayAgain={resetGame}
       />
     </div>
