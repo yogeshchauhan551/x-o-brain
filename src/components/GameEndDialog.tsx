@@ -10,31 +10,31 @@ interface GameEndDialogProps {
   player2Name: string;
   player1Emoji: string;
   player2Emoji: string;
-  playerSymbol: "X" | "O";
+  onClose: () => void;
   onPlayAgain: () => void;
   theme: Theme;
 }
 
-const GameEndDialog = ({ open, winner, gameMode, player1Name, player2Name, player1Emoji, player2Emoji, playerSymbol, onPlayAgain, theme }: GameEndDialogProps) => {
+const GameEndDialog = ({ open, winner, gameMode, player1Name, player2Name, player1Emoji, player2Emoji, onClose, onPlayAgain, theme }: GameEndDialogProps) => {
   const getTitle = () => {
     if (gameMode === "friend") {
       if (winner === "X") return `${player1Emoji} ${player1Name} Wins!`;
       if (winner === "O") return `${player2Emoji} ${player2Name} Wins!`;
       return "🤝 It's a Tie!";
     } else {
-      if (winner === playerSymbol) return `${player1Emoji} ${player1Name} Won!`;
-      return winner === (playerSymbol === "X" ? "O" : "X") ? `${player2Emoji} ${player2Name} Wins!` : "🤝 It's a Tie!";
+      if (winner === "X") return `${player1Emoji} ${player1Name} Won!`;
+      return winner === "O" ? `${player2Emoji} ${player2Name} Wins!` : "🤝 It's a Tie!";
     }
   };
 
   const getMessage = () => {
-    if (winner === "tie") return "Well played! 🌟";
-    if (gameMode === "friend") return winner === "X" ? `Congrats ${player1Name}! 🎊` : `Congrats ${player2Name}! 💖`;
-    return winner === playerSymbol ? `Congrats ${player1Name}!` : `${player2Name} wins!`;
+    if (winner === "tie") return "Well played! You're a Legend 💫";
+    if (gameMode === "friend") return winner === "X" ? `${player1Name}, You're a Legend! 💫` : `${player2Name}, You're a Legend! 💫`;
+    return winner === "X" ? `${player1Name}, You're a Legend! 💫` : `${player2Name} wins this round!`;
   };
 
   return (
-    <Dialog open={open}>
+    <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md border-2 font-quicksand" style={{ background: theme.cardBg, borderColor: theme.glowColor }}>
         <DialogHeader>
           <DialogTitle className="text-3xl text-center font-bold" style={{ backgroundImage: theme.buttonGradient, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>{getTitle()}</DialogTitle>
