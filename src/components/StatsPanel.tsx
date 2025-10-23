@@ -1,14 +1,16 @@
 import { GameStats } from "@/utils/statsUtils";
 import { Card } from "@/components/ui/card";
+import { CSSProperties } from "react";
 
 interface StatsPanelProps {
   stats: GameStats;
   className?: string;
+  style?: CSSProperties;
 }
 
-const StatsPanel = ({ stats, className }: StatsPanelProps) => {
+const StatsPanel = ({ stats, className, style }: StatsPanelProps) => {
   return (
-    <Card className={`p-4 ${className}`}>
+    <Card className={`p-4 ${className}`} style={style}>
       <h3 className="text-lg font-semibold text-center mb-3">📊 Your Stats</h3>
       <div className="grid grid-cols-2 gap-3 text-center">
         <div>
