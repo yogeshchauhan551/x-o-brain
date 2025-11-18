@@ -308,17 +308,41 @@ const GamePage = () => {
 
   return (
     <div 
-      className="min-h-screen flex items-center justify-center p-4 transition-all duration-700 font-poppins animate-fade-in" 
+      className="min-h-screen flex items-center justify-center p-4 transition-all duration-700 font-poppins animate-fade-in relative overflow-hidden" 
       style={{ background: theme.background }}
     >
+      {/* Parallax neon grid background */}
+      <div className="absolute inset-0 pointer-events-none opacity-10">
+        <div className="absolute inset-0" style={{
+          backgroundImage: 'linear-gradient(hsl(262 83% 58% / 0.2) 1px, transparent 1px), linear-gradient(90deg, hsl(262 83% 58% / 0.2) 1px, transparent 1px)',
+          backgroundSize: '50px 50px',
+          transform: 'perspective(500px) rotateX(60deg) translateZ(-100px)'
+        }} />
+      </div>
+      
+      {/* Floating anime particles */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-1/4 left-1/5 text-2xl opacity-30 petal-fall" style={{ animationDelay: '0s' }}>🌸</div>
+        <div className="absolute top-1/3 right-1/4 text-xl opacity-40 star-twinkle" style={{ animationDelay: '1s' }}>✨</div>
+        <div className="absolute bottom-1/3 left-1/3 text-lg opacity-35 star-twinkle" style={{ animationDelay: '2s' }}>⭐</div>
+        <div className="absolute top-2/3 right-1/5 text-sm opacity-25 star-twinkle" style={{ animationDelay: '3s' }}>💫</div>
+      </div>
+      
+      {/* Volumetric light rays */}
+      <div className="absolute inset-0 pointer-events-none opacity-20">
+        <div className="absolute top-0 left-1/3 w-24 h-full bg-gradient-to-b from-primary/30 via-primary/5 to-transparent blur-3xl" />
+        <div className="absolute top-0 right-1/3 w-32 h-full bg-gradient-to-b from-accent/20 via-accent/5 to-transparent blur-3xl" />
+      </div>
+      
       <SoundToggle isMuted={isMuted} onToggle={() => { setIsMuted(!isMuted); saveMuteState(!isMuted); }} />
       <ConfettiEffect show={showConfetti} />
       <AchievementNotification achievement={currentAchievement} onClose={() => setCurrentAchievement(null)} />
 
-      <div className="w-full max-w-md space-y-6">
-        <div className="text-center space-y-2 animate-in slide-in-from-top duration-500">
-          <h1 className="text-4xl md:text-5xl font-bold font-quicksand" style={{ backgroundImage: theme.buttonGradient, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>
+      <div className="w-full max-w-md space-y-6 relative z-10">
+        <div className="text-center space-y-2 animate-in slide-in-from-top duration-500 cinematic-zoom">
+          <h1 className="text-4xl md:text-5xl font-bold font-quicksand hero-glow anime-sparkle relative" style={{ backgroundImage: theme.buttonGradient, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>
             TicTacLegend {gameMode === "friend" && "💖"}
+            <div className="absolute -top-2 -right-2 text-xl star-twinkle opacity-60">✨</div>
           </h1>
           {!gameOver && (
             <TurnIndicator 
@@ -331,41 +355,112 @@ const GamePage = () => {
 
         <StatsPanel stats={stats} style={{ background: theme.cardBg }} />
 
-        <Card className="p-6" style={{ background: theme.cardBg }}>
-          <div className="grid grid-cols-3 gap-4 text-center">
+        <Card className="p-6 hologram-glass cinematic-depth relative overflow-hidden" style={{ background: theme.cardBg, boxShadow: 'var(--shadow-hologram)' }}>
+          {/* Anime glow line */}
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50 shimmer-sweep" />
+          
+          <div className="grid grid-cols-3 gap-4 text-center relative z-10">
             {gameMode === "ai" ? (
               <>
-                <div><div className="text-3xl font-bold" style={{ color: settings.player1Color }}>{score.player}</div><div className="text-sm">{settings.player1Emoji} {settings.player1Name}</div></div>
-                <div><div className="text-3xl font-bold">{score.ties}</div><div className="text-sm">Ties</div></div>
-                <div><div className="text-3xl font-bold" style={{ color: settings.player2Color }}>{score.computer}</div><div className="text-sm">{settings.player2Emoji} AI</div></div>
+                <div className="anime-sparkle">
+                  <div className="text-3xl font-bold bloom-pulse" style={{ color: settings.player1Color, textShadow: `0 0 10px ${settings.player1Color}50` }}>{score.player}</div>
+                  <div className="text-sm">{settings.player1Emoji} {settings.player1Name}</div>
+                </div>
+                <div>
+                  <div className="text-3xl font-bold">{ score.ties}</div>
+                  <div className="text-sm">Ties</div>
+                </div>
+                <div className="anime-sparkle">
+                  <div className="text-3xl font-bold bloom-pulse" style={{ color: settings.player2Color, textShadow: `0 0 10px ${settings.player2Color}50` }}>{score.computer}</div>
+                  <div className="text-sm">{settings.player2Emoji} AI</div>
+                </div>
               </>
             ) : (
               <>
-                <div><div className="text-3xl font-bold" style={{ color: settings.player1Color }}>{score.player1}</div><div className="text-sm">{settings.player1Emoji} {settings.player1Name}</div></div>
-                <div><div className="text-3xl font-bold">{score.ties}</div><div className="text-sm">Ties</div></div>
-                <div><div className="text-3xl font-bold" style={{ color: settings.player2Color }}>{score.player2}</div><div className="text-sm">{settings.player2Emoji} {settings.player2Name}</div></div>
+                <div className="anime-sparkle">
+                  <div className="text-3xl font-bold bloom-pulse" style={{ color: settings.player1Color, textShadow: `0 0 10px ${settings.player1Color}50` }}>{score.player1}</div>
+                  <div className="text-sm">{settings.player1Emoji} {settings.player1Name}</div>
+                </div>
+                <div>
+                  <div className="text-3xl font-bold">{score.ties}</div>
+                  <div className="text-sm">Ties</div>
+                </div>
+                <div className="anime-sparkle">
+                  <div className="text-3xl font-bold bloom-pulse" style={{ color: settings.player2Color, textShadow: `0 0 10px ${settings.player2Color}50` }}>{score.player2}</div>
+                  <div className="text-sm">{settings.player2Emoji} {settings.player2Name}</div>
+                </div>
               </>
             )}
           </div>
         </Card>
 
-        <Card className="p-6" style={{ background: theme.cardBg }}>
-          <div className="grid grid-cols-3 gap-3">
+        {/* 3D Neon Game Board with cinematic + anime effects */}
+        <Card className="p-6 hologram-glass cinematic-depth relative overflow-hidden" style={{ 
+          background: theme.cardBg, 
+          boxShadow: 'var(--shadow-cinematic)',
+          transform: 'perspective(1000px)'
+        }}>
+          {/* Hologram grid overlay */}
+          <div className="absolute inset-0 pointer-events-none opacity-5" style={{
+            backgroundImage: 'linear-gradient(hsl(262 83% 58% / 0.5) 1px, transparent 1px), linear-gradient(90deg, hsl(262 83% 58% / 0.5) 1px, transparent 1px)',
+            backgroundSize: '20px 20px'
+          }} />
+          
+          {/* Neon beam for winning line */}
+          {winningLine.length > 0 && (
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute top-1/2 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent neon-beam" 
+                style={{ boxShadow: '0 0 20px hsl(262 83% 58%), 0 0 40px hsl(262 83% 58%)' }} 
+              />
+            </div>
+          )}
+          
+          <div className="grid grid-cols-3 gap-3 relative z-10">
             {board.map((cell, i) => (
               <button 
                 key={i} 
                 onClick={() => handleCellClick(i)} 
                 onMouseEnter={playHoverSound} 
                 disabled={gameOver || cell !== null || (gameMode === "ai" && !isPlayerTurn)} 
-                className="aspect-square rounded-lg text-5xl font-bold transition-all hover:scale-105 animate-in scale-in duration-300" 
+                className="aspect-square rounded-lg text-5xl font-bold transition-all hover:scale-105 hover:anime-bounce animate-in scale-in duration-300 relative group cinematic-depth" 
                 style={{ 
                   background: winningLine.includes(i) ? theme.winningCell : theme.cellBg, 
                   color: cell === "X" ? settings.player1Color : cell === "O" ? settings.player2Color : 'transparent', 
-                  boxShadow: winningLine.includes(i) ? `0 0 20px ${theme.glowColor}` : 'none',
-                  animationDelay: `${i * 50}ms`
+                  boxShadow: winningLine.includes(i) 
+                    ? `0 0 30px ${theme.glowColor}, 0 0 60px ${theme.glowColor}40, inset 0 0 20px ${theme.glowColor}20` 
+                    : '0 4px 15px rgba(0,0,0,0.3), inset 0 0 10px rgba(255,255,255,0.05)',
+                  animationDelay: `${i * 50}ms`,
+                  transform: winningLine.includes(i) ? 'translateZ(20px)' : 'translateZ(0)',
+                  border: '1px solid hsl(0 0% 100% / 0.1)'
                 }}
               >
-                {cell && <span className="animate-in zoom-in-50 duration-200">{cell}</span>}
+                {/* Glass reflection */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-lg pointer-events-none" />
+                
+                {/* Hover glow */}
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg pointer-events-none" />
+                
+                {/* Cell content with energy burst animation */}
+                {cell && (
+                  <span className="animate-in zoom-in-50 duration-200 relative inline-block">
+                    {cell}
+                    {/* Energy burst effect on new placement */}
+                    <span className="absolute inset-0 energy-burst pointer-events-none" 
+                      style={{ 
+                        background: `radial-gradient(circle, ${cell === "X" ? settings.player1Color : settings.player2Color}40, transparent)`,
+                        borderRadius: '50%'
+                      }} 
+                    />
+                  </span>
+                )}
+                
+                {/* Anime sparkles on winning cells */}
+                {winningLine.includes(i) && (
+                  <>
+                    <div className="absolute top-2 right-2 text-sm star-twinkle opacity-80">✨</div>
+                    <div className="absolute bottom-2 left-2 text-xs star-twinkle opacity-60" style={{ animationDelay: '0.5s' }}>⭐</div>
+                  </>
+                )}
               </button>
             ))}
           </div>
